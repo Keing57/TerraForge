@@ -11,6 +11,6 @@
         <StackPanel Grid.Column="0">
         </StackPanel>
         
-        <Image Grid.Column="1" Stretch="Uniform"/>
+        <Image x:Name="MapImage" Grid.Column="1" Stretch="Uniform"/>
     </Grid>
 </Window>
