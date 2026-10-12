@@ -10,10 +10,10 @@ namespace TerraForge
         public MainWindow()
         {
             InitializeComponent();
-            GenerateWhiteNoise();
+            GenerateHeightmap();
         }
 
-        private void GenerateWhiteNoise()
+        private void GenerateHeightmap()
         {
             int width = 512;
             int height = 512;
@@ -24,14 +24,16 @@ namespace TerraForge
             int stride = bitmap.PixelWidth * bytesPerPixel;
             byte[] pixelData = new byte[height * stride];
 
-            Random random = new Random();
+            float scale = 0.05f;
 
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     int index = y * stride + x * bytesPerPixel;
-                    byte colorValue = (byte)(random.Next(2) == 0 ? 0 : 255);
+                    
+                    float noiseValue = Noise.GetNoise(x * scale, y * scale);
+                    byte colorValue = (byte)Math.Clamp((noiseValue + 1f) * 0.5f * 255f, 0, 255);
                     
                     pixelData[index] = colorValue;
                     pixelData[index + 1] = colorValue;
