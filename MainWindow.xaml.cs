@@ -7,10 +7,22 @@ namespace TerraForge
 {
     public partial class MainWindow : Window
     {
+        private bool isInitialized = false;
+
         public MainWindow()
         {
             InitializeComponent();
+            isInitialized = true;
             GenerateHeightmap();
+        }
+
+        private void ScaleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (isInitialized)
+            {
+                ScaleValueText.Text = ScaleSlider.Value.ToString("F4");
+                GenerateHeightmap();
+            }
         }
 
         private void GenerateHeightmap()
@@ -24,7 +36,7 @@ namespace TerraForge
             int stride = bitmap.PixelWidth * bytesPerPixel;
             byte[] pixelData = new byte[height * stride];
 
-            float scale = 0.05f;
+            float scale = (float)ScaleSlider.Value;
 
             for (int y = 0; y < height; y++)
             {
