@@ -44,7 +44,7 @@ namespace TerraForge
                 {
                     int index = y * stride + x * bytesPerPixel;
                     
-                    float noiseValue = Noise.GetNoise(x * scale, y * scale);
+                    float noiseValue = Noise.GetFBM(x * scale, y * scale, 6, 0.5f, 2f);
                     
                     byte r, g, b;
                     

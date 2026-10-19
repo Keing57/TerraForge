@@ -72,5 +72,23 @@ namespace TerraForge
 
             return res;
         }
+
+        public static float GetFBM(float x, float y, int octaves, float persistence, float lacunarity)
+        {
+            float total = 0;
+            float frequency = 1;
+            float amplitude = 1;
+            float maxValue = 0;
+
+            for (int i = 0; i < octaves; i++)
+            {
+                total += GetNoise(x * frequency, y * frequency) * amplitude;
+                maxValue += amplitude;
+                amplitude *= persistence;
+                frequency *= lacunarity;
+            }
+
+            return total / maxValue;
+        }
     }
 }
