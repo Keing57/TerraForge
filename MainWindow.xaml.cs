@@ -16,11 +16,15 @@ namespace TerraForge
             GenerateHeightmap();
         }
 
-        private void ScaleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (isInitialized)
             {
                 ScaleValueText.Text = ScaleSlider.Value.ToString("F4");
+                OctavesValueText.Text = OctavesSlider.Value.ToString("F0");
+                PersistenceValueText.Text = PersistenceSlider.Value.ToString("F2");
+                LacunarityValueText.Text = LacunaritySlider.Value.ToString("F2");
+                
                 GenerateHeightmap();
             }
         }
@@ -37,6 +41,9 @@ namespace TerraForge
             byte[] pixelData = new byte[height * stride];
 
             float scale = (float)ScaleSlider.Value;
+            int octaves = (int)OctavesSlider.Value;
+            float persistence = (float)PersistenceSlider.Value;
+            float lacunarity = (float)LacunaritySlider.Value;
 
             for (int y = 0; y < height; y++)
             {
@@ -44,7 +51,7 @@ namespace TerraForge
                 {
                     int index = y * stride + x * bytesPerPixel;
                     
-                    float noiseValue = Noise.GetFBM(x * scale, y * scale, 6, 0.5f, 2f);
+                    float noiseValue = Noise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
                     
                     byte r, g, b;
                     
