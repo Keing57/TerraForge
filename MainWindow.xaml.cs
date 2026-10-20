@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -8,12 +9,41 @@ namespace TerraForge
     public partial class MainWindow : Window
     {
         private bool isInitialized = false;
+        private Noise currentNoise;
 
         public MainWindow()
         {
             InitializeComponent();
+            InitializeNoise();
             isInitialized = true;
             GenerateHeightmap();
+        }
+
+        private void InitializeNoise()
+        {
+            if (int.TryParse(SeedTextBox.Text, out int seed))
+            {
+                currentNoise = new Noise(seed);
+            }
+            else
+            {
+                currentNoise = new Noise(0);
+            }
+        }
+
+        private void SeedTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (isInitialized)
+            {
+                InitializeNoise();
+                GenerateHeightmap();
+            }
+        }
+
+        private void RandomizeSeedButton_Click(object sender, RoutedEventArgs e)
+        {
+            Random rnd = new Random();
+            SeedTextBox.Text = rnd.Next().ToString();
         }
 
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -31,6 +61,8 @@ namespace TerraForge
 
         private void GenerateHeightmap()
         {
+            if (currentNoise == null) return;
+
             int width = 512;
             int height = 512;
             WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
@@ -51,7 +83,7 @@ namespace TerraForge
                 {
                     int index = y * stride + x * bytesPerPixel;
                     
-                    float noiseValue = Noise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
+                    float noiseValue = currentNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
                     
                     byte r, g, b;
                     

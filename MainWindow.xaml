@@ -9,6 +9,10 @@
         </Grid.ColumnDefinitions>
         
         <StackPanel Grid.Column="0" Margin="10">
+            <TextBlock Text="Seed:"/>
+            <TextBox x:Name="SeedTextBox" Text="42" TextChanged="SeedTextBox_TextChanged" Margin="0,0,0,5"/>
+            <Button Content="Randomize Seed" Click="RandomizeSeedButton_Click" Margin="0,0,0,10"/>
+            
             <TextBlock Text="Scale:"/>
             <Slider x:Name="ScaleSlider" Minimum="0.001" Maximum="0.2" Value="0.05" ValueChanged="Slider_ValueChanged"/>
             <TextBlock x:Name="ScaleValueText" Text="0.0500"/>
