@@ -10,10 +10,12 @@ namespace TerraForge
     {
         private bool isInitialized = false;
         private Noise currentNoise;
+        private float[,] falloffMap;
 
         public MainWindow()
         {
             InitializeComponent();
+            falloffMap = FalloffGenerator.GenerateFalloffMap(512);
             InitializeNoise();
             isInitialized = true;
             GenerateHeightmap();
@@ -61,7 +63,7 @@ namespace TerraForge
 
         private void GenerateHeightmap()
         {
-            if (currentNoise == null) return;
+            if (currentNoise == null || falloffMap == null) return;
 
             int width = 512;
             int height = 512;
@@ -84,6 +86,8 @@ namespace TerraForge
                     int index = y * stride + x * bytesPerPixel;
                     
                     float noiseValue = currentNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
+                    
+                    noiseValue = Math.Clamp(noiseValue - falloffMap[x, y], -1f, 1f);
                     
                     byte r, g, b;
                     
