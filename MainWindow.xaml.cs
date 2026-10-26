@@ -48,6 +48,14 @@ namespace TerraForge
             SeedTextBox.Text = rnd.Next().ToString();
         }
 
+        private void CheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isInitialized)
+            {
+                GenerateHeightmap();
+            }
+        }
+
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (isInitialized)
@@ -78,6 +86,7 @@ namespace TerraForge
             int octaves = (int)OctavesSlider.Value;
             float persistence = (float)PersistenceSlider.Value;
             float lacunarity = (float)LacunaritySlider.Value;
+            bool applyFalloff = IslandModeCheckBox.IsChecked == true;
 
             for (int y = 0; y < height; y++)
             {
@@ -87,7 +96,14 @@ namespace TerraForge
                     
                     float noiseValue = currentNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
                     
-                    noiseValue = Math.Clamp(noiseValue - falloffMap[x, y], -1f, 1f);
+                    if (applyFalloff)
+                    {
+                        noiseValue = Math.Clamp(noiseValue - falloffMap[x, y], -1f, 1f);
+                    }
+                    else
+                    {
+                        noiseValue = Math.Clamp(noiseValue, -1f, 1f);
+                    }
                     
                     byte r, g, b;
                     
