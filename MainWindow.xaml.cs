@@ -10,6 +10,7 @@ namespace TerraForge
     {
         private bool isInitialized = false;
         private Noise currentNoise;
+        private Noise moistureNoise;
         private float[,] falloffMap;
 
         public MainWindow()
@@ -26,10 +27,12 @@ namespace TerraForge
             if (int.TryParse(SeedTextBox.Text, out int seed))
             {
                 currentNoise = new Noise(seed);
+                moistureNoise = new Noise(seed + 1);
             }
             else
             {
                 currentNoise = new Noise(0);
+                moistureNoise = new Noise(1);
             }
         }
 
@@ -71,7 +74,7 @@ namespace TerraForge
 
         private void GenerateHeightmap()
         {
-            if (currentNoise == null || falloffMap == null) return;
+            if (currentNoise == null || moistureNoise == null || falloffMap == null) return;
 
             int width = 512;
             int height = 512;
@@ -95,6 +98,7 @@ namespace TerraForge
                     int index = y * stride + x * bytesPerPixel;
                     
                     float noiseValue = currentNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
+                    float moistureValue = moistureNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
                     
                     if (applyFalloff)
                     {
