@@ -119,21 +119,53 @@ namespace TerraForge
                     {
                         r = 173; g = 216; b = 230;
                     }
-                    else if (noiseValue < 0.3f)
-                    {
-                        r = 255; g = 255; b = 0;
-                    }
-                    else if (noiseValue < 0.7f)
-                    {
-                        r = 34; g = 139; b = 34;
-                    }
-                    else if (noiseValue < 0.9f)
-                    {
-                        r = 128; g = 128; b = 128;
-                    }
                     else
                     {
-                        r = 255; g = 255; b = 255;
+                        if (noiseValue < 0.4f)
+                        {
+                            if (moistureValue < 0f)
+                            {
+                                r = 255; g = 255; b = 153;
+                            }
+                            else if (moistureValue < 0.4f)
+                            {
+                                r = 144; g = 238; b = 144;
+                            }
+                            else
+                            {
+                                r = 0; g = 100; b = 0;
+                            }
+                        }
+                        else if (noiseValue < 0.7f)
+                        {
+                            if (moistureValue < 0f)
+                            {
+                                r = 240; g = 230; b = 140;
+                            }
+                            else if (moistureValue < 0.4f)
+                            {
+                                r = 34; g = 139; b = 34;
+                            }
+                            else
+                            {
+                                r = 85; g = 107; b = 47;
+                            }
+                        }
+                        else
+                        {
+                            if (moistureValue < 0f)
+                            {
+                                r = 128; g = 128; b = 128;
+                            }
+                            else if (moistureValue < 0.4f)
+                            {
+                                r = 192; g = 192; b = 192;
+                            }
+                            else
+                            {
+                                r = 255; g = 255; b = 255;
+                            }
+                        }
                     }
 
                     pixelData[index] = b;
