@@ -59,6 +59,14 @@ namespace TerraForge
             }
         }
 
+        private void RadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (isInitialized)
+            {
+                GenerateHeightmap();
+            }
+        }
+
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (isInitialized)
@@ -91,6 +99,9 @@ namespace TerraForge
             float lacunarity = (float)LacunaritySlider.Value;
             bool applyFalloff = IslandModeCheckBox.IsChecked == true;
 
+            bool isColorMap = ColorMapRadio.IsChecked == true;
+            bool isHeightMap = HeightMapRadio.IsChecked == true;
+
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -108,64 +119,82 @@ namespace TerraForge
                     {
                         noiseValue = Math.Clamp(noiseValue, -1f, 1f);
                     }
+                    moistureValue = Math.Clamp(moistureValue, -1f, 1f);
                     
-                    byte r, g, b;
+                    byte r = 0, g = 0, b = 0;
                     
-                    if (noiseValue < 0f)
+                    if (isColorMap)
                     {
-                        r = 0; g = 0; b = 139;
-                    }
-                    else if (noiseValue < 0.2f)
-                    {
-                        r = 173; g = 216; b = 230;
-                    }
-                    else
-                    {
-                        if (noiseValue < 0.4f)
+                        if (noiseValue < 0f)
                         {
-                            if (moistureValue < 0f)
-                            {
-                                r = 255; g = 255; b = 153;
-                            }
-                            else if (moistureValue < 0.4f)
-                            {
-                                r = 144; g = 238; b = 144;
-                            }
-                            else
-                            {
-                                r = 0; g = 100; b = 0;
-                            }
+                            r = 0; g = 0; b = 139;
                         }
-                        else if (noiseValue < 0.7f)
+                        else if (noiseValue < 0.2f)
                         {
-                            if (moistureValue < 0f)
-                            {
-                                r = 240; g = 230; b = 140;
-                            }
-                            else if (moistureValue < 0.4f)
-                            {
-                                r = 34; g = 139; b = 34;
-                            }
-                            else
-                            {
-                                r = 85; g = 107; b = 47;
-                            }
+                            r = 173; g = 216; b = 230;
                         }
                         else
                         {
-                            if (moistureValue < 0f)
+                            if (noiseValue < 0.4f)
                             {
-                                r = 128; g = 128; b = 128;
+                                if (moistureValue < 0f)
+                                {
+                                    r = 255; g = 255; b = 153;
+                                }
+                                else if (moistureValue < 0.4f)
+                                {
+                                    r = 144; g = 238; b = 144;
+                                }
+                                else
+                                {
+                                    r = 0; g = 100; b = 0;
+                                }
                             }
-                            else if (moistureValue < 0.4f)
+                            else if (noiseValue < 0.7f)
                             {
-                                r = 192; g = 192; b = 192;
+                                if (moistureValue < 0f)
+                                {
+                                    r = 240; g = 230; b = 140;
+                                }
+                                else if (moistureValue < 0.4f)
+                                {
+                                    r = 34; g = 139; b = 34;
+                                }
+                                else
+                                {
+                                    r = 85; g = 107; b = 47;
+                                }
                             }
                             else
                             {
-                                r = 255; g = 255; b = 255;
+                                if (moistureValue < 0f)
+                                {
+                                    r = 128; g = 128; b = 128;
+                                }
+                                else if (moistureValue < 0.4f)
+                                {
+                                    r = 192; g = 192; b = 192;
+                                }
+                                else
+                                {
+                                    r = 255; g = 255; b = 255;
+                                }
                             }
                         }
+                    }
+                    else if (isHeightMap)
+                    {
+                        byte colorValue = (byte)Math.Clamp((noiseValue + 1f) * 0.5f * 255f, 0, 255);
+                        r = colorValue;
+                        g = colorValue;
+                        b = colorValue;
+                    }
+                    else
+                    {
+                        byte colorValue = (byte)Math.Clamp((moistureValue + 1f) * 0.5f * 255f, 0, 255);
+                        r = colorValue;
+                        g = colorValue;
+                        b = colorValue;
                     }
 
                     pixelData[index] = b;

@@ -14,6 +14,11 @@
             <Button Content="Randomize Seed" Click="RandomizeSeedButton_Click" Margin="0,0,0,10"/>
             
             <CheckBox x:Name="IslandModeCheckBox" Content="Island Mode" IsChecked="True" Checked="CheckBox_Changed" Unchecked="CheckBox_Changed" Margin="0,0,0,10"/>
+
+            <TextBlock Text="View Mode:"/>
+            <RadioButton x:Name="ColorMapRadio" Content="Color Map" IsChecked="True" Checked="RadioButton_Checked"/>
+            <RadioButton x:Name="HeightMapRadio" Content="Height Map" Checked="RadioButton_Checked"/>
+            <RadioButton x:Name="MoistureMapRadio" Content="Moisture Map" Checked="RadioButton_Checked" Margin="0,0,0,10"/>
             
             <TextBlock Text="Scale:"/>
             <Slider x:Name="ScaleSlider" Minimum="0.001" Maximum="0.2" Value="0.05" ValueChanged="Slider_ValueChanged"/>
