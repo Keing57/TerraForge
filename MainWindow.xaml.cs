@@ -38,12 +38,24 @@ namespace TerraForge
             }
         }
 
-        private void SeedTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void GenerateButton_Click(object sender, RoutedEventArgs e)
         {
             if (isInitialized)
             {
                 InitializeNoise();
                 _ = GenerateHeightmapAsync();
+            }
+        }
+
+        private void SeedTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (isInitialized)
+            {
+                InitializeNoise();
+                if (AutoUpdateCheckBox.IsChecked == true)
+                {
+                    _ = GenerateHeightmapAsync();
+                }
             }
         }
 
@@ -55,7 +67,7 @@ namespace TerraForge
 
         private void CheckBox_Changed(object sender, RoutedEventArgs e)
         {
-            if (isInitialized)
+            if (isInitialized && AutoUpdateCheckBox.IsChecked == true)
             {
                 _ = GenerateHeightmapAsync();
             }
@@ -63,7 +75,7 @@ namespace TerraForge
 
         private void RadioButton_Checked(object sender, RoutedEventArgs e)
         {
-            if (isInitialized)
+            if (isInitialized && AutoUpdateCheckBox.IsChecked == true)
             {
                 _ = GenerateHeightmapAsync();
             }
@@ -78,7 +90,10 @@ namespace TerraForge
                 PersistenceValueText.Text = PersistenceSlider.Value.ToString("F2");
                 LacunarityValueText.Text = LacunaritySlider.Value.ToString("F2");
                 
-                _ = GenerateHeightmapAsync();
+                if (AutoUpdateCheckBox.IsChecked == true)
+                {
+                    _ = GenerateHeightmapAsync();
+                }
             }
         }
 

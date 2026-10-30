@@ -9,6 +9,9 @@
         </Grid.ColumnDefinitions>
         
         <StackPanel Grid.Column="0" Margin="10">
+            <CheckBox x:Name="AutoUpdateCheckBox" Content="Auto-Update" IsChecked="True" Margin="0,0,0,5"/>
+            <Button Content="Generate" Click="GenerateButton_Click" Margin="0,0,0,10"/>
+
             <TextBlock Text="Seed:"/>
             <TextBox x:Name="SeedTextBox" Text="42" TextChanged="SeedTextBox_TextChanged" Margin="0,0,0,5"/>
             <Button Content="Randomize Seed" Click="RandomizeSeedButton_Click" Margin="0,0,0,10"/>
