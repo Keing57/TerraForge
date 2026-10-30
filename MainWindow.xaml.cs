@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -12,6 +13,7 @@ namespace TerraForge
         private Noise currentNoise;
         private Noise moistureNoise;
         private float[,] falloffMap;
+        private int currentGeneration = 0;
 
         public MainWindow()
         {
@@ -19,7 +21,7 @@ namespace TerraForge
             falloffMap = FalloffGenerator.GenerateFalloffMap(512);
             InitializeNoise();
             isInitialized = true;
-            GenerateHeightmap();
+            _ = GenerateHeightmapAsync();
         }
 
         private void InitializeNoise()
@@ -41,7 +43,7 @@ namespace TerraForge
             if (isInitialized)
             {
                 InitializeNoise();
-                GenerateHeightmap();
+                _ = GenerateHeightmapAsync();
             }
         }
 
@@ -55,7 +57,7 @@ namespace TerraForge
         {
             if (isInitialized)
             {
-                GenerateHeightmap();
+                _ = GenerateHeightmapAsync();
             }
         }
 
@@ -63,7 +65,7 @@ namespace TerraForge
         {
             if (isInitialized)
             {
-                GenerateHeightmap();
+                _ = GenerateHeightmapAsync();
             }
         }
 
@@ -76,21 +78,20 @@ namespace TerraForge
                 PersistenceValueText.Text = PersistenceSlider.Value.ToString("F2");
                 LacunarityValueText.Text = LacunaritySlider.Value.ToString("F2");
                 
-                GenerateHeightmap();
+                _ = GenerateHeightmapAsync();
             }
         }
 
-        private void GenerateHeightmap()
+        private async Task GenerateHeightmapAsync()
         {
             if (currentNoise == null || moistureNoise == null || falloffMap == null) return;
 
+            int generation = ++currentGeneration;
+
             int width = 512;
             int height = 512;
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
-            MapImage.Source = bitmap;
-
-            int bytesPerPixel = bitmap.Format.BitsPerPixel / 8;
-            int stride = bitmap.PixelWidth * bytesPerPixel;
+            int bytesPerPixel = 4;
+            int stride = width * bytesPerPixel;
             byte[] pixelData = new byte[height * stride];
 
             float scale = (float)ScaleSlider.Value;
@@ -98,113 +99,125 @@ namespace TerraForge
             float persistence = (float)PersistenceSlider.Value;
             float lacunarity = (float)LacunaritySlider.Value;
             bool applyFalloff = IslandModeCheckBox.IsChecked == true;
-
             bool isColorMap = ColorMapRadio.IsChecked == true;
             bool isHeightMap = HeightMapRadio.IsChecked == true;
+            
+            Noise localNoise = currentNoise;
+            Noise localMoistureNoise = moistureNoise;
 
-            for (int y = 0; y < height; y++)
+            await Task.Run(() =>
             {
-                for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
                 {
-                    int index = y * stride + x * bytesPerPixel;
-                    
-                    float noiseValue = currentNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
-                    float moistureValue = moistureNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
-                    
-                    if (applyFalloff)
+                    if (generation != currentGeneration) return;
+
+                    for (int x = 0; x < width; x++)
                     {
-                        noiseValue = Math.Clamp(noiseValue - falloffMap[x, y], -1f, 1f);
-                    }
-                    else
-                    {
-                        noiseValue = Math.Clamp(noiseValue, -1f, 1f);
-                    }
-                    moistureValue = Math.Clamp(moistureValue, -1f, 1f);
-                    
-                    byte r = 0, g = 0, b = 0;
-                    
-                    if (isColorMap)
-                    {
-                        if (noiseValue < 0f)
+                        int index = y * stride + x * bytesPerPixel;
+                        
+                        float noiseValue = localNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
+                        float moistureValue = localMoistureNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
+                        
+                        if (applyFalloff)
                         {
-                            r = 0; g = 0; b = 139;
-                        }
-                        else if (noiseValue < 0.2f)
-                        {
-                            r = 173; g = 216; b = 230;
+                            noiseValue = Math.Clamp(noiseValue - falloffMap[x, y], -1f, 1f);
                         }
                         else
                         {
-                            if (noiseValue < 0.4f)
+                            noiseValue = Math.Clamp(noiseValue, -1f, 1f);
+                        }
+                        moistureValue = Math.Clamp(moistureValue, -1f, 1f);
+                        
+                        byte r = 0, g = 0, b = 0;
+                        
+                        if (isColorMap)
+                        {
+                            if (noiseValue < 0f)
                             {
-                                if (moistureValue < 0f)
-                                {
-                                    r = 255; g = 255; b = 153;
-                                }
-                                else if (moistureValue < 0.4f)
-                                {
-                                    r = 144; g = 238; b = 144;
-                                }
-                                else
-                                {
-                                    r = 0; g = 100; b = 0;
-                                }
+                                r = 0; g = 0; b = 139;
                             }
-                            else if (noiseValue < 0.7f)
+                            else if (noiseValue < 0.2f)
                             {
-                                if (moistureValue < 0f)
-                                {
-                                    r = 240; g = 230; b = 140;
-                                }
-                                else if (moistureValue < 0.4f)
-                                {
-                                    r = 34; g = 139; b = 34;
-                                }
-                                else
-                                {
-                                    r = 85; g = 107; b = 47;
-                                }
+                                r = 173; g = 216; b = 230;
                             }
                             else
                             {
-                                if (moistureValue < 0f)
+                                if (noiseValue < 0.4f)
                                 {
-                                    r = 128; g = 128; b = 128;
+                                    if (moistureValue < 0f)
+                                    {
+                                        r = 255; g = 255; b = 153;
+                                    }
+                                    else if (moistureValue < 0.4f)
+                                    {
+                                        r = 144; g = 238; b = 144;
+                                    }
+                                    else
+                                    {
+                                        r = 0; g = 100; b = 0;
+                                    }
                                 }
-                                else if (moistureValue < 0.4f)
+                                else if (noiseValue < 0.7f)
                                 {
-                                    r = 192; g = 192; b = 192;
+                                    if (moistureValue < 0f)
+                                    {
+                                        r = 240; g = 230; b = 140;
+                                    }
+                                    else if (moistureValue < 0.4f)
+                                    {
+                                        r = 34; g = 139; b = 34;
+                                    }
+                                    else
+                                    {
+                                        r = 85; g = 107; b = 47;
+                                    }
                                 }
                                 else
                                 {
-                                    r = 255; g = 255; b = 255;
+                                    if (moistureValue < 0f)
+                                    {
+                                        r = 128; g = 128; b = 128;
+                                    }
+                                    else if (moistureValue < 0.4f)
+                                    {
+                                        r = 192; g = 192; b = 192;
+                                    }
+                                    else
+                                    {
+                                        r = 255; g = 255; b = 255;
+                                    }
                                 }
                             }
                         }
-                    }
-                    else if (isHeightMap)
-                    {
-                        byte colorValue = (byte)Math.Clamp((noiseValue + 1f) * 0.5f * 255f, 0, 255);
-                        r = colorValue;
-                        g = colorValue;
-                        b = colorValue;
-                    }
-                    else
-                    {
-                        byte colorValue = (byte)Math.Clamp((moistureValue + 1f) * 0.5f * 255f, 0, 255);
-                        r = colorValue;
-                        g = colorValue;
-                        b = colorValue;
-                    }
+                        else if (isHeightMap)
+                        {
+                            byte colorValue = (byte)Math.Clamp((noiseValue + 1f) * 0.5f * 255f, 0, 255);
+                            r = colorValue;
+                            g = colorValue;
+                            b = colorValue;
+                        }
+                        else
+                        {
+                            byte colorValue = (byte)Math.Clamp((moistureValue + 1f) * 0.5f * 255f, 0, 255);
+                            r = colorValue;
+                            g = colorValue;
+                            b = colorValue;
+                        }
 
-                    pixelData[index] = b;
-                    pixelData[index + 1] = g;
-                    pixelData[index + 2] = r;
-                    pixelData[index + 3] = 255;
+                        pixelData[index] = b;
+                        pixelData[index + 1] = g;
+                        pixelData[index + 2] = r;
+                        pixelData[index + 3] = 255;
+                    }
                 }
-            }
+            });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixelData, stride, 0);
+            if (generation == currentGeneration)
+            {
+                WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+                bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixelData, stride, 0);
+                MapImage.Source = bitmap;
+            }
         }
     }
 }
