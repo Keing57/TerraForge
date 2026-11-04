@@ -47,6 +47,27 @@ namespace TerraForge
             }
         }
 
+        private void ExportPngButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (MapImage.Source is WriteableBitmap bitmap)
+            {
+                Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+                dlg.FileName = "TerraForgeMap";
+                dlg.DefaultExt = ".png";
+                dlg.Filter = "PNG images (.png)|*.png";
+
+                if (dlg.ShowDialog() == true)
+                {
+                    PngBitmapEncoder encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                    using (System.IO.FileStream stream = new System.IO.FileStream(dlg.FileName, System.IO.FileMode.Create))
+                    {
+                        encoder.Save(stream);
+                    }
+                }
+            }
+        }
+
         private void SeedTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (isInitialized)
