@@ -118,6 +118,107 @@ namespace TerraForge
             }
         }
 
+        private void MapImage_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!isInitialized || currentNoise == null || moistureNoise == null || falloffMap == null) return;
+
+            Point pos = e.GetPosition(MapImage);
+            
+            double actualWidth = MapImage.ActualWidth;
+            double actualHeight = MapImage.ActualHeight;
+
+            double imageAspect = 1.0; 
+            double controlAspect = actualWidth / actualHeight;
+
+            double renderWidth, renderHeight;
+            double offsetX = 0, offsetY = 0;
+
+            if (controlAspect > imageAspect)
+            {
+                renderHeight = actualHeight;
+                renderWidth = actualHeight * imageAspect;
+                offsetX = (actualWidth - renderWidth) / 2;
+            }
+            else
+            {
+                renderWidth = actualWidth;
+                renderHeight = actualWidth / imageAspect;
+                offsetY = (actualHeight - renderHeight) / 2;
+            }
+
+            double xPos = pos.X - offsetX;
+            double yPos = pos.Y - offsetY;
+
+            if (xPos >= 0 && xPos < renderWidth && yPos >= 0 && yPos < renderHeight)
+            {
+                int x = (int)((xPos / renderWidth) * 512);
+                int y = (int)((yPos / renderHeight) * 512);
+
+                if (x >= 0 && x < 512 && y >= 0 && y < 512)
+                {
+                    float scale = (float)ScaleSlider.Value;
+                    int octaves = (int)OctavesSlider.Value;
+                    float persistence = (float)PersistenceSlider.Value;
+                    float lacunarity = (float)LacunaritySlider.Value;
+                    bool applyFalloff = IslandModeCheckBox.IsChecked == true;
+
+                    float noiseValue = currentNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
+                    float moistureValue = moistureNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
+                    
+                    if (applyFalloff)
+                    {
+                        noiseValue = Math.Clamp(noiseValue - falloffMap[x, y], -1f, 1f);
+                    }
+                    else
+                    {
+                        noiseValue = Math.Clamp(noiseValue, -1f, 1f);
+                    }
+                    moistureValue = Math.Clamp(moistureValue, -1f, 1f);
+
+                    string biome = "";
+                    if (noiseValue < 0f)
+                    {
+                        biome = "Deep Water";
+                    }
+                    else if (noiseValue < 0.2f)
+                    {
+                        biome = "Shallow Water";
+                    }
+                    else
+                    {
+                        if (noiseValue < 0.4f)
+                        {
+                            if (moistureValue < 0f) biome = "Desert";
+                            else if (moistureValue < 0.4f) biome = "Grassland";
+                            else biome = "Jungle";
+                        }
+                        else if (noiseValue < 0.7f)
+                        {
+                            if (moistureValue < 0f) biome = "Savanna";
+                            else if (moistureValue < 0.4f) biome = "Forest";
+                            else biome = "Swamp";
+                        }
+                        else
+                        {
+                            if (moistureValue < 0f) biome = "Bare Mountain";
+                            else if (moistureValue < 0.4f) biome = "Snowy Mountain";
+                            else biome = "Snow";
+                        }
+                    }
+
+                    MapImage.ToolTip = $"Biome: {biome}\nHeight: {noiseValue:F2}\nMoisture: {moistureValue:F2}";
+                }
+                else
+                {
+                    MapImage.ToolTip = null;
+                }
+            }
+            else
+            {
+                MapImage.ToolTip = null;
+            }
+        }
+
         private async Task GenerateHeightmapAsync()
         {
             if (currentNoise == null || moistureNoise == null || falloffMap == null) return;

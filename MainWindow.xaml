@@ -41,6 +41,6 @@
             <TextBlock x:Name="LacunarityValueText" Text="2.00"/>
         </StackPanel>
         
-        <Image x:Name="MapImage" Grid.Column="1" Stretch="Uniform"/>
+        <Image x:Name="MapImage" Grid.Column="1" Stretch="Uniform" MouseMove="MapImage_MouseMove"/>
     </Grid>
 </Window>
