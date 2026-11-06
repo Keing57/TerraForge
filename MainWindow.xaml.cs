@@ -14,6 +14,10 @@ namespace TerraForge
         private Noise moistureNoise;
         private float[,] falloffMap;
         private int currentGeneration = 0;
+        
+        private Point dragStartPoint;
+        private Point translateStartPoint;
+        private bool isDragging = false;
 
         public MainWindow()
         {
@@ -118,14 +122,66 @@ namespace TerraForge
             }
         }
 
-        private void MapImage_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        private void Border_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
+            double zoomFactor = 1.1;
+            if (e.Delta < 0) zoomFactor = 1.0 / zoomFactor;
+
+            Point relative = e.GetPosition(MapImage);
+            double absoluteX = relative.X * MapScaleTransform.ScaleX + MapTranslateTransform.X;
+            double absoluteY = relative.Y * MapScaleTransform.ScaleY + MapTranslateTransform.Y;
+
+            MapScaleTransform.ScaleX *= zoomFactor;
+            MapScaleTransform.ScaleY *= zoomFactor;
+
+            MapTranslateTransform.X = absoluteX - relative.X * MapScaleTransform.ScaleX;
+            MapTranslateTransform.Y = absoluteY - relative.Y * MapScaleTransform.ScaleY;
+        }
+
+        private void Border_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var border = (Border)sender;
+            dragStartPoint = e.GetPosition(border);
+            translateStartPoint = new Point(MapTranslateTransform.X, MapTranslateTransform.Y);
+            border.CaptureMouse();
+            isDragging = true;
+        }
+
+        private void Border_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var border = (Border)sender;
+            border.ReleaseMouseCapture();
+            isDragging = false;
+        }
+
+        private void Border_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (isDragging)
+            {
+                var border = (Border)sender;
+                border.ReleaseMouseCapture();
+                isDragging = false;
+            }
+        }
+
+        private void Border_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            var border = (Border)sender;
+            if (isDragging)
+            {
+                Point currentPoint = e.GetPosition(border);
+                MapTranslateTransform.X = translateStartPoint.X + (currentPoint.X - dragStartPoint.X);
+                MapTranslateTransform.Y = translateStartPoint.Y + (currentPoint.Y - dragStartPoint.Y);
+            }
+
             if (!isInitialized || currentNoise == null || moistureNoise == null || falloffMap == null) return;
 
             Point pos = e.GetPosition(MapImage);
             
             double actualWidth = MapImage.ActualWidth;
             double actualHeight = MapImage.ActualHeight;
+
+            if (actualWidth == 0 || actualHeight == 0) return;
 
             double imageAspect = 1.0; 
             double controlAspect = actualWidth / actualHeight;

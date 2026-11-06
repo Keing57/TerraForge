@@ -41,6 +41,20 @@
             <TextBlock x:Name="LacunarityValueText" Text="2.00"/>
         </StackPanel>
         
-        <Image x:Name="MapImage" Grid.Column="1" Stretch="Uniform" MouseMove="MapImage_MouseMove"/>
+        <Border Grid.Column="1" ClipToBounds="True" Background="Transparent"
+                MouseWheel="Border_MouseWheel"
+                MouseLeftButtonDown="Border_MouseLeftButtonDown"
+                MouseLeftButtonUp="Border_MouseLeftButtonUp"
+                MouseMove="Border_MouseMove"
+                MouseLeave="Border_MouseLeave">
+            <Image x:Name="MapImage" Stretch="Uniform">
+                <Image.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="MapScaleTransform"/>
+                        <TranslateTransform x:Name="MapTranslateTransform"/>
+                    </TransformGroup>
+                </Image.RenderTransform>
+            </Image>
+        </Border>
     </Grid>
 </Window>
