@@ -18,6 +18,10 @@ namespace TerraForge
         private Point dragStartPoint;
         private Point translateStartPoint;
         private bool isDragging = false;
+        
+        private float[,] lastHeights;
+        private float[,] lastMoistures;
+        private bool[,] lastRivers;
 
         public MainWindow()
         {
@@ -174,7 +178,7 @@ namespace TerraForge
                 MapTranslateTransform.Y = translateStartPoint.Y + (currentPoint.Y - dragStartPoint.Y);
             }
 
-            if (!isInitialized || currentNoise == null || moistureNoise == null || falloffMap == null) return;
+            if (!isInitialized || lastHeights == null || lastMoistures == null || lastRivers == null) return;
 
             Point pos = e.GetPosition(MapImage);
             
@@ -212,27 +216,16 @@ namespace TerraForge
 
                 if (x >= 0 && x < 512 && y >= 0 && y < 512)
                 {
-                    float scale = (float)ScaleSlider.Value;
-                    int octaves = (int)OctavesSlider.Value;
-                    float persistence = (float)PersistenceSlider.Value;
-                    float lacunarity = (float)LacunaritySlider.Value;
-                    bool applyFalloff = IslandModeCheckBox.IsChecked == true;
-
-                    float noiseValue = currentNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
-                    float moistureValue = moistureNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
-                    
-                    if (applyFalloff)
-                    {
-                        noiseValue = Math.Clamp(noiseValue - falloffMap[x, y], -1f, 1f);
-                    }
-                    else
-                    {
-                        noiseValue = Math.Clamp(noiseValue, -1f, 1f);
-                    }
-                    moistureValue = Math.Clamp(moistureValue, -1f, 1f);
+                    float noiseValue = lastHeights[x, y];
+                    float moistureValue = lastMoistures[x, y];
+                    bool isRiver = lastRivers[x, y] && noiseValue >= 0.2f;
 
                     string biome = "";
-                    if (noiseValue < 0f)
+                    if (isRiver)
+                    {
+                        biome = "River";
+                    }
+                    else if (noiseValue < 0f)
                     {
                         biome = "Deep Water";
                     }
@@ -298,6 +291,13 @@ namespace TerraForge
             Noise localNoise = currentNoise;
             Noise localMoistureNoise = moistureNoise;
 
+            int mapSeed = 0;
+            int.TryParse(SeedTextBox.Text, out mapSeed);
+
+            float[,] heights = new float[width, height];
+            float[,] moistures = new float[width, height];
+            bool[,] rivers = new bool[width, height];
+
             await Task.Run(() =>
             {
                 for (int y = 0; y < height; y++)
@@ -306,8 +306,6 @@ namespace TerraForge
 
                     for (int x = 0; x < width; x++)
                     {
-                        int index = y * stride + x * bytesPerPixel;
-                        
                         float noiseValue = localNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
                         float moistureValue = localMoistureNoise.GetFBM(x * scale, y * scale, octaves, persistence, lacunarity);
                         
@@ -320,12 +318,95 @@ namespace TerraForge
                             noiseValue = Math.Clamp(noiseValue, -1f, 1f);
                         }
                         moistureValue = Math.Clamp(moistureValue, -1f, 1f);
+
+                        heights[x, y] = noiseValue;
+                        moistures[x, y] = moistureValue;
+                    }
+                }
+
+                Random rnd = new Random(mapSeed);
+                int attemptedRivers = 0;
+                int validRivers = 0;
+
+                while (attemptedRivers < 1000 && validRivers < 40)
+                {
+                    if (generation != currentGeneration) return;
+
+                    attemptedRivers++;
+                    int startX = rnd.Next(width);
+                    int startY = rnd.Next(height);
+
+                    if (heights[startX, startY] > 0.6f)
+                    {
+                        validRivers++;
+                        int cx = startX;
+                        int cy = startY;
+
+                        while (true)
+                        {
+                            rivers[cx, cy] = true;
+
+                            if (heights[cx, cy] < 0.2f)
+                            {
+                                break;
+                            }
+
+                            int nextX = cx;
+                            int nextY = cy;
+                            float lowest = heights[cx, cy];
+
+                            for (int ny = -1; ny <= 1; ny++)
+                            {
+                                for (int nx = -1; nx <= 1; nx++)
+                                {
+                                    if (nx == 0 && ny == 0) continue;
+                                    
+                                    int chkX = cx + nx;
+                                    int chkY = cy + ny;
+
+                                    if (chkX >= 0 && chkX < width && chkY >= 0 && chkY < height)
+                                    {
+                                        if (heights[chkX, chkY] < lowest)
+                                        {
+                                            lowest = heights[chkX, chkY];
+                                            nextX = chkX;
+                                            nextY = chkY;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (nextX == cx && nextY == cy)
+                            {
+                                break;
+                            }
+
+                            cx = nextX;
+                            cy = nextY;
+                        }
+                    }
+                }
+
+                for (int y = 0; y < height; y++)
+                {
+                    if (generation != currentGeneration) return;
+
+                    for (int x = 0; x < width; x++)
+                    {
+                        int index = y * stride + x * bytesPerPixel;
+                        
+                        float noiseValue = heights[x, y];
+                        float moistureValue = moistures[x, y];
                         
                         byte r = 0, g = 0, b = 0;
                         
                         if (isColorMap)
                         {
-                            if (noiseValue < 0f)
+                            if (rivers[x, y] && noiseValue >= 0.2f)
+                            {
+                                r = 30; g = 144; b = 255;
+                            }
+                            else if (noiseValue < 0f)
                             {
                                 r = 0; g = 0; b = 139;
                             }
@@ -407,6 +488,10 @@ namespace TerraForge
 
             if (generation == currentGeneration)
             {
+                lastHeights = heights;
+                lastMoistures = moistures;
+                lastRivers = rivers;
+
                 WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
                 bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixelData, stride, 0);
                 MapImage.Source = bitmap;
