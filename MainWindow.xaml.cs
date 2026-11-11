@@ -478,6 +478,16 @@ namespace TerraForge
                             b = colorValue;
                         }
 
+                        if (x > 0)
+                        {
+                            float diff = heights[x, y] - heights[x - 1, y];
+                            float shade = Math.Clamp(1.0f + diff * 5f, 0.3f, 1.7f);
+
+                            r = (byte)Math.Clamp(r * shade, 0, 255);
+                            g = (byte)Math.Clamp(g * shade, 0, 255);
+                            b = (byte)Math.Clamp(b * shade, 0, 255);
+                        }
+
                         pixelData[index] = b;
                         pixelData[index + 1] = g;
                         pixelData[index + 2] = r;
